@@ -17,7 +17,15 @@ import("//starboard/shared/toolchain/overridable_gcc_toolchain.gni")
 # Directory for GCC 6.3 if it is installed as a system dependency.
 _default_gcc_6_3_bin_dir = "/usr/bin"
 
+<<<<<<< HEAD
 overridable_gcc_toolchain("target") {
+=======
+cobalt_clang_toolchain("cobalt") {
+  native_linker_path = "${_default_gcc_6_3_bin_dir}/clang++"
+}
+
+overridable_gcc_toolchain("starboard") {
+>>>>>>> d481619a114 (Modify gcc , cobalt toolchains (#2072))
   cc = "${_default_gcc_6_3_bin_dir}/gcc-6"
   cxx = "${_default_gcc_6_3_bin_dir}/g++-6"
   ld = cxx

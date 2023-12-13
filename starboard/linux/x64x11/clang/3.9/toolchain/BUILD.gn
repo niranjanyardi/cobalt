@@ -17,7 +17,15 @@ import("//starboard/shared/toolchain/overridable_gcc_toolchain.gni")
 
 _target_llvm_3_9_bin_dir = "/usr/lib/llvm-3.9/bin"
 
+<<<<<<< HEAD
 overridable_gcc_toolchain("target") {
+=======
+cobalt_clang_toolchain("cobalt") {
+  native_linker_path = "${_target_llvm_3_9_bin_dir}/clang++"
+}
+
+overridable_gcc_toolchain("starboard") {
+>>>>>>> d481619a114 (Modify gcc , cobalt toolchains (#2072))
   cc = "${_target_llvm_3_9_bin_dir}/clang"
   cxx = "${_target_llvm_3_9_bin_dir}/clang++"
   ld = cxx
