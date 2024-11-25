@@ -68,6 +68,7 @@ config("runtime_library") {
       "-isystem" + rebase_path("$libcxx_prefix/include", root_build_dir),
       "-isystem" + rebase_path("$libcxxabi_prefix/include", root_build_dir),
     ]
+    # print(cflags_cc, "cfalg_cc")
 
     cflags_objcc = cflags_cc
 
