@@ -66,6 +66,7 @@ from datetime import datetime
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -231,6 +232,38 @@ def package_and_deploy(
     Path(archive_name).unlink(missing_ok=True)
 
 
+def cleanup_host_ports(device_id: Optional[str] = None) -> None:
+    print("[INFO] Cleaning up DevTools ports on host...")
+    # Try to kill SSH tunnel using port 9222 on host
+    if shutil.which("lsof"):
+        try:
+            output = subprocess.check_output(["lsof", "-i", ":9222", "-sTCP:LISTEN"]).decode()
+            lines = output.strip().splitlines()
+            for line in lines[1:]:  # Skip header
+                parts = line.split()
+                if len(parts) >= 2:
+                    command = parts[0]
+                    pid = parts[1]
+                    if command.lower() == "ssh":
+                        print(f"[INFO] Killing SSH process {pid} using port 9222")
+                        run_command(["kill", pid], check=False)
+                    else:
+                        print(f"[WARNING] Port 9222 is in use by '{command}' (PID {pid}). Not killing it.")
+        except subprocess.CalledProcessError:
+            pass
+    else:
+        # Fallback to pkill if lsof is not available
+        run_command(["pkill", "-f", "9222:localhost:9222"], check=False)
+        run_command(["pkill", "-f", "ssh.*9222"], check=False)
+
+    # Try to remove ADB forward
+    if shutil.which("adb"):
+        if device_id:
+            run_command(["adb", "-s", device_id, "forward", "--remove", "tcp:9222"], check=False)
+        else:
+            run_command(["adb", "forward", "--remove", "tcp:9222"], check=False)
+
+
 def launch_on_device(
     device_id: Optional[str],
     device_ip: Optional[str],
@@ -329,6 +362,7 @@ def launch_on_device(
 
         if devtools:
             print("[INFO] Setting up DevTools port forwarding...")
+            cleanup_host_ports(device_id)
             if device_id:
                 run_command(["adb", "-s", device_id, "forward", "tcp:9222", "tcp:9222"])
             elif device_ip:
@@ -699,11 +733,7 @@ def main() -> None:
         print("=== Restarting WPEFramework ===")
         run_remote_command("systemctl restart wpeframework", device_id, device_ip, sleep_time=5)
         print("=== Cleaning up DevTools ports on host ===")
-        # Always try to kill SSH tunnel on host
-        run_command(["pkill", "-f", "9222:localhost:9222"], check=False)
-        # Try to remove ADB forward if we have a device_id
-        if device_id:
-            run_command(["adb", "-s", device_id, "forward", "--remove", "tcp:9222"], check=False)
+        cleanup_host_ports(device_id)
         if not (args.run or args.tests or args.force_deploy):
             print("=== Reset finished. ===")
             return
