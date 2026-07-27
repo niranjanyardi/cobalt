@@ -818,7 +818,7 @@ def main() -> None:
             sys.exit(1)
 
         executable_type = (
-            "executable" if (args.mode == "executable" and not args.tests) else None
+            "executable" if (args.mode == "executable" and not args.tests) else "shared_library"
         )
         configure_build(
             PLATFORM, config, out_dir, args.no_rbe, executable_type=executable_type
