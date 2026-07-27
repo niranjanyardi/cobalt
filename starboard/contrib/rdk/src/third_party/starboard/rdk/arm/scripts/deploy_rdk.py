@@ -219,7 +219,7 @@ def configure_build(
                 args_gn.write_text(new_content, encoding="utf-8")
             except Exception:
                 pass
-            run_command(["gn", "gen", str(out_dir)])
+            run_command(cmd)
 
 
 def build_targets(out_dir: Path, targets: List[str]) -> str:
