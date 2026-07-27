@@ -201,13 +201,24 @@ def configure_build(
         cmd.append("--no-rbe")
     run_command(cmd)
 
-    if executable_type:
-        args_gn = out_dir / "args.gn"
-        if args_gn.exists():
-            with open(args_gn, "a", encoding="utf-8") as f:
-                f.write(
-                    f'\nstarboard_level_final_executable_type = "{executable_type}"\n'
-                )
+    args_gn = out_dir / "args.gn"
+    if args_gn.exists():
+        try:
+            content = args_gn.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            content = ""
+        lines = [
+            line for line in content.splitlines()
+            if not line.strip().startswith("starboard_level_final_executable_type")
+        ]
+        if executable_type:
+            lines.append(f'starboard_level_final_executable_type = "{executable_type}"')
+        new_content = "\n".join(lines) + "\n"
+        if new_content != content:
+            try:
+                args_gn.write_text(new_content, encoding="utf-8")
+            except Exception:
+                pass
             run_command(["gn", "gen", str(out_dir)])
 
 

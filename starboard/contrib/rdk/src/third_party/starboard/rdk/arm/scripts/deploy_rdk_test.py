@@ -257,6 +257,35 @@ class TestDeployRdk(unittest.TestCase):
         gn_call = next(c for c in self.mock_run.call_args_list if "gn.py" in str(c))
         self.assertIn("--no-rbe", gn_call[0][0])
 
+    def test_configure_build_args_gn_cleaning(self):
+        """Verifies configure_build filters existing executable_type from args.gn."""
+        mock_out_dir = mock.MagicMock(spec=Path)
+        mock_args_gn = mock.MagicMock(spec=Path)
+        mock_out_dir.__truediv__.return_value = mock_args_gn
+        mock_args_gn.exists.return_value = True
+        mock_args_gn.read_text.return_value = (
+            'is_debug = false\n'
+            'starboard_level_final_executable_type = "executable"\n'
+        )
+
+        # Test plugin mode (executable_type = None) cleans the line
+        deploy_rdk.configure_build("test_platform", "qa", mock_out_dir, no_rbe=False, executable_type=None)
+        mock_args_gn.write_text.assert_called_once_with('is_debug = false\n', encoding="utf-8")
+
+        # Reset mock
+        mock_args_gn.write_text.reset_mock()
+        mock_args_gn.read_text.return_value = (
+            'is_debug = false\n'
+            'starboard_level_final_executable_type = "executable"\n'
+        )
+
+        # Test updating executable_type = "shared_library"
+        deploy_rdk.configure_build("test_platform", "qa", mock_out_dir, no_rbe=False, executable_type="shared_library")
+        mock_args_gn.write_text.assert_called_once_with(
+            'is_debug = false\nstarboard_level_final_executable_type = "shared_library"\n', encoding="utf-8"
+        )
+
+
 
 class TestDeployRdkDeviceDetection(unittest.TestCase):
     """Unit tests for the device auto-detection logic in deploy_rdk script."""
